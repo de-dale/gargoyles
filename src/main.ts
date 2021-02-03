@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { TutorialScene } from "./app/tutorial";
+import { GargoylesScene } from "./app/gargoyles";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -13,7 +14,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false
     }
   },
-  scene: TutorialScene
+  scene: GargoylesScene
 };
 
 export const game = new Phaser.Game(config);
