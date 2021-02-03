@@ -15,6 +15,10 @@ module.exports = {
         test: /\.tsx?$/,
         use: 'ts-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.(gif|png|jpe?g|svg|xml)$/i,
+        use: 'file-loader'
       }
     ]
   },
@@ -36,9 +40,13 @@ module.exports = {
           from: 'src/index.html'
         },
         {
+          from: 'src/favicon.ico'
+        },
+        {
           from: 'src/assets',
           to: 'assets'
         }
+
       ]
     })
   ]
