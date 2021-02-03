@@ -6,6 +6,8 @@ import sky from '../assets/sky.png';
 import ground from '../assets/platform.png';
 // @ts-ignore
 import firebrand from '../assets/sprites/firebrand.png';
+// @ts-ignore
+import firebrandAtlas from '../assets/sprites/firebrand.atlas';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -157,11 +159,12 @@ export class GargoylesScene extends Phaser.Scene {
   }
 
   public preload() {
+    console.log('preload')
     // this.load.spritesheet('firebrand', '../assets/sprites/firebrand.walk.png',
     //   { frameWidth: 24, frameHeight: 24 });
     this.load.image('sky', sky);
     this.load.image('ground', ground);
-    this.load.atlas('firebrand', firebrand, '../assets/sprites/firebrand.json')
+    this.load.atlas('firebrand', firebrand, firebrandAtlas)
   }
 
   public create() {
