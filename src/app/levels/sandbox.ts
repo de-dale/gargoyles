@@ -3,7 +3,7 @@ import * as Phaser from 'phaser';
 import * as tiles from '@assets/maps/colored.png';
 import * as levelSandbox from '@assets/maps/level-sandbox.json';
 
-import { FirebrandOnAction } from "./player/firebrand/onAction";
+import { FirebrandOnAction } from '@app/player/firebrand/onAction';
 
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
@@ -11,7 +11,7 @@ const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   key: 'Gargoyles',
 };
 
-export class GargoylesScene extends Phaser.Scene {
+export class SandboxScene extends Phaser.Scene {
 
   private firebrand: FirebrandOnAction;
 

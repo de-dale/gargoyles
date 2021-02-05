@@ -3,7 +3,12 @@
     "module": "commonjs",
     "target": "es5",
     "sourceMap": true,
-    "typeRoots" : ["node_modules/@types", "src/types"]
+    "typeRoots" : ["node_modules/@types", "src/types"],
+    "baseUrl": "./",
+    "paths": {
+      "@app/*": ["src/app/*"],
+      "@assets/*": ["src/assets/*"]
+    }
   },
   "exclude": [
     "node_modules"

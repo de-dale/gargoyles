@@ -28,8 +28,9 @@ module.exports = {
   resolve: {
     extensions: [ '.ts', '.tsx', '.js' ],
     alias: {
-      '@assets': path.resolve(__dirname, 'src/assets/')
-    },
+      '@app': path.resolve(__dirname, 'src', 'app'),
+      '@assets': path.join(__dirname, 'src', 'assets')
+    }
   },
   output: {
     filename: '[name].bundle.js',
@@ -51,6 +52,4 @@ module.exports = {
       ]
     })
   ]
-
-
 };

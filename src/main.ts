@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 
-import { GargoylesScene } from "./app/gargoyles";
+import { SandboxScene } from "@app/levels/sandbox.ts";
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -13,7 +13,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false
     }
   },
-  scene: GargoylesScene
+  scene: SandboxScene
 };
 
 export const game = new Phaser.Game(config);

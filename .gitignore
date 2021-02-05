@@ -2,3 +2,7 @@
 *.iml
 node_modules
 dist
+
+# Tiled & TexturePacker files
+*.tiled-*
+*.tps
