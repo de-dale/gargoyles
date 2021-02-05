@@ -46,7 +46,6 @@ export class GargoylesScene extends Phaser.Scene {
   }
 
   public update(time: number, delta: number) {
-    // this.controls.update(delta)
     this.firebrand.update()
   }
 
