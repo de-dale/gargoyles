@@ -17,13 +17,19 @@ module.exports = {
         exclude: /node_modules/
       },
       {
-        test: /\.(gif|png|jpe?g|svg|xml|atlas)$/i,
-        use: 'file-loader'
+        test: /\.(gif|png|jpe?g|svg|xml|json)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext][query]'
+        }
       }
     ]
   },
   resolve: {
-    extensions: [ '.ts', '.tsx', '.js' ]
+    extensions: [ '.ts', '.tsx', '.js' ],
+    alias: {
+      '@assets': path.resolve(__dirname, 'src/assets/')
+    },
   },
   output: {
     filename: '[name].bundle.js',
@@ -41,12 +47,7 @@ module.exports = {
         },
         {
           from: 'src/favicon.ico'
-        },
-        {
-          from: 'src/assets',
-          to: 'assets'
         }
-
       ]
     })
   ]

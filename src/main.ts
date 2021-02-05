@@ -1,6 +1,5 @@
 import * as Phaser from 'phaser';
 
-import { TutorialScene } from "./app/tutorial";
 import { GargoylesScene } from "./app/gargoyles";
 
 const config: Phaser.Types.Core.GameConfig = {
