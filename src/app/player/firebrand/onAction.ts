@@ -9,15 +9,16 @@ export class FirebrandOnAction {
   down: Phaser.Input.Keyboard.Key
   left: Phaser.Input.Keyboard.Key
   right: Phaser.Input.Keyboard.Key
-  jumping: boolean = false;
+  private jumping: boolean = false
+  private flying: boolean
 
-  constructor (player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
+  constructor (avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
     up,
     down,
     left,
     right
   }: { up: any; down: any; left: any; right: any }) {
-    this.avatar = player
+    this.avatar = avatar
     this.up = up
     this.down = down
     this.left = left
@@ -57,6 +58,10 @@ export class FirebrandOnAction {
 
   private isOnFloor (): boolean {
     return this.avatar.body.onFloor()
+  }
+
+  private isOnWall (): boolean {
+    return this.avatar.body.onWall()
   }
 
   private leftIsDown (): boolean {
@@ -160,19 +165,32 @@ export class FirebrandOnAction {
     }
   }
 
-  private flying () {
+  private flies () {
     if (!this.isOnFloor() && !this.isJumping() && this.upIsDown()) {
+      this.flying = true
       this.avatar.setVelocityY(-5)
+    } else {
+      this.flying = false
     }
   };
 
+  isFlying () {
+    return this.flying
+  }
+
+  private hanging () {
+    if (!this.isOnFloor() && this.isOnWall() && !this.isJumping() && !this.isFlying()) {
+
+    }
+  }
+
   update () {
     this.moveOnHorizontally()
-    this.animateOrientation()
-    this.animateWalking()
+    // this.animateOrientation()
+    // this.animateWalking()
 
     this.jumps()
-    this.animateJumping()
-    this.flying()
+    // this.animateJumping()
+    this.flies()
   }
 }

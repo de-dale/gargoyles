@@ -8,7 +8,7 @@ import { FirebrandOnAction } from '@app/player/firebrand/onAction'
 const sceneConfig: Phaser.Types.Scenes.SettingsConfig = {
   active: false,
   visible: false,
-  key: 'Gargoyles'
+  key: 'Sandbox'
 }
 
 export class SandboxScene extends Phaser.Scene {
