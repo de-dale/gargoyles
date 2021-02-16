@@ -3,6 +3,20 @@ import * as Phaser from 'phaser'
 import * as firebrand from '@assets/sprites/firebrand.png'
 import * as firebrandAtlas from '@assets/sprites/firebrand.atlas.json'
 
+type State = 'walking' | 'jumping' | 'flying' | 'falling' | 'hanging' | 'standing' | 'none'
+type Action =
+  'jumps'
+  | 'jumps:stop'
+  | 'flying'
+  | 'flying:stop'
+  | 'hangs'
+  | 'hangs:stop'
+  | 'walk'
+  | 'stand'
+  | 'falls'
+  | 'left'
+  | 'right'
+
 export class FirebrandOnAction {
   avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   up: Phaser.Input.Keyboard.Key
@@ -11,8 +25,11 @@ export class FirebrandOnAction {
   right: Phaser.Input.Keyboard.Key
   private jumping: boolean = false
   private flying: boolean
+  private hanging: boolean;
+  private facing: string;
+  state: State;
 
-  constructor (avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
+  constructor(avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
     up,
     down,
     left,
@@ -25,11 +42,11 @@ export class FirebrandOnAction {
     this.right = right
   }
 
-  static preloadSprites (scene: Phaser.Scene) {
+  static preloadSprites(scene: Phaser.Scene) {
     scene.load.atlas('firebrand', firebrand, firebrandAtlas)
   }
 
-  static create (scene: Phaser.Scene, x, y) {
+  static create(scene: Phaser.Scene, x, y) {
     const cursors = scene.input.keyboard.createCursorKeys()
     const player = scene.physics.add.sprite(x, y, 'firebrand', 'firebrand.stand')
     player.setCollideWorldBounds(true)
@@ -40,7 +57,7 @@ export class FirebrandOnAction {
     return result
   }
 
-  private createAnimations (scene: Phaser.Scene) {
+  private createAnimations(scene: Phaser.Scene) {
     this.avatar.anims.create({
       key: 'walk',
       frames: scene.anims.generateFrameNames('firebrand', { prefix: 'firebrand.walk', start: 1, end: 3 }),
@@ -54,143 +71,237 @@ export class FirebrandOnAction {
       frameRate: 10,
       repeat: -1
     })
+
+    this.avatar.anims.create({
+      key: 'hanged',
+      frames: [{ key: 'firebrand', frame: 'firebrand.hanged' }],
+      frameRate: 10,
+      repeat: -1
+    })
   }
 
-  private isOnFloor (): boolean {
+  private isOnFloor(): boolean {
     return this.avatar.body.onFloor()
   }
 
-  private isOnWall (): boolean {
-    return this.avatar.body.onWall()
+  private isOnAir(): boolean {
+    return !this.isOnFloor()
   }
 
-  private leftIsDown (): boolean {
+  private leftIsDown(): boolean {
     return this.left.isDown
   }
 
-  private leftIsUp (): boolean {
+  private leftIsUp(): boolean {
     return this.left.isUp
   }
 
-  private rightIsDown (): boolean {
+  private rightIsDown(): boolean {
     return this.right.isDown
   }
 
-  private rightIsUp (): boolean {
+  private rightIsUp(): boolean {
     return this.right.isUp
   }
 
-  private upIsDown (): boolean {
+  private upIsDown(): boolean {
     return this.up.isDown
   }
 
-  private upIsUp (): boolean {
+  private upIsUp(): boolean {
     return this.up.isUp
   }
 
-  private movesRight () {
-    return this.leftIsUp() && this.rightIsDown()
+  private animateFacingRight() {
+    this.avatar.setFlip(false, false)
   }
 
-  private movesLeft () {
-    return this.leftIsDown() && this.rightIsUp()
+  private animateFacingLeft() {
+    this.avatar.setFlip(true, false)
   }
 
-  private bothDirectionsAreDown () {
-    return this.leftIsDown() && this.rightIsDown()
-  }
+  update() {
+    const actions = this.nextActions();
+    this.move(actions);
 
-  private bothDirectionsAreUp () {
-    return this.leftIsUp() && this.rightIsUp()
-  }
+    // ANIMATE FACING
 
-  private cannotDetermineMove () {
-    return this.bothDirectionsAreDown() || this.bothDirectionsAreUp()
-  }
-
-  private animateOrientation () {
-    if (this.movesLeft()) {
-      this.avatar.setFlip(true, false)
+    if (actions.includes('left')) {
+      if (this.state === 'hanging') {
+        this.animateFacingRight()
+      } else {
+        this.animateFacingLeft()
+      }
     }
-    if (this.movesRight()) {
-      this.avatar.setFlip(false, false)
+    if (actions.includes('right')) {
+      if (this.state === 'hanging') {
+        this.animateFacingLeft()
+      } else {
+        this.animateFacingRight()
+      }
     }
-  };
 
-  private moveOnHorizontally = () => {
-    if (this.movesLeft()) {
-      this.avatar.setVelocityX(-160)
+    // ANIMATE
+    switch (this.state) {
+      case "falling":
+      case "flying":
+      case "jumping":
+        this.avatar.anims.play('jump', true)
+        break
+      case "walking":
+        this.avatar.anims.play('walk', true)
+        break
+      case "hanging":
+        this.avatar.anims.play('hanged', true)
+        break
+      case "standing":
+      case "none":
+      default:
+        this.avatar.setTexture('firebrand', 'firebrand.stand')
     }
-    if (this.movesRight()) {
-      this.avatar.setVelocityX(160)
-    }
-    if (this.cannotDetermineMove()) {
+  }
+
+  private move(actions: Action[]) {
+    if (actions.includes('left')) {
+      if (actions.includes('hangs:stop')) {
+        this.avatar.setVelocityX(-500)
+      } else {
+        this.avatar.setVelocityX(-160)
+      }
+    } else if (actions.includes('right')) {
+      if (actions.includes('hangs:stop')) {
+        this.avatar.setVelocityX(500)
+      } else {
+        this.avatar.setVelocityX(160)
+      }
+    } else {
       this.avatar.setVelocityX(0)
     }
-  };
 
-  private animateWalking () {
-    if (!this.isOnFloor()) {
-      return
+    if (actions.includes('walk')) {
+      this.state = 'walking'
     }
-    if (this.movesLeft() || this.movesRight()) {
-      this.avatar.anims.play('walk', true)
-    } else {
-      this.avatar.setTexture('firebrand', 'firebrand.stand')
+    if (actions.includes('stand')) {
+      this.state = 'standing'
     }
-  }
-
-  private startsJumping () {
-    return this.isOnFloor() && this.upIsDown()
-  }
-
-  private isJumping () {
-    return this.jumping
-  }
-
-  private jumps () {
-    if (this.startsJumping()) {
-      this.jumping = true
+    if (actions.includes('jumps')) {
+      this.state = 'jumping'
       this.avatar.setVelocityY(-400)
     }
-    if (this.isJumping() && this.upIsUp()) {
-      this.jumping = false
+    if (actions.includes('flying')) {
+      this.state = 'flying'
+      this.avatar.setVelocityY(-5)
+    }
+    if (actions.includes('hangs')) {
+      this.state = 'hanging'
+      this.avatar.setVelocityY(-5)
+      console.log("HANGS")
+    }
+    if (actions.includes('falls')) {
+      this.state = 'falling'
       this.avatar.setVelocityY(0)
     }
-  }
-
-  private animateJumping () {
-    if (!this.isOnFloor()) {
-      this.avatar.anims.play('jump', true)
+    if (actions.includes('flying:stop')) {
+      this.state = 'falling'
+      this.avatar.setVelocityY(0)
+    }
+    if (actions.includes('jumps:stop')) {
+      this.state = 'falling'
+    }
+    if (actions.includes('hangs:stop')) {
+      this.state = 'falling'
     }
   }
 
-  private flies () {
-    if (!this.isOnFloor() && !this.isJumping() && this.upIsDown()) {
-      this.flying = true
-      this.avatar.setVelocityY(-5)
-    } else {
-      this.flying = false
-    }
-  };
+  private nextActions(): Action[] {
+    const result: Action[] = []
 
-  isFlying () {
-    return this.flying
+    if (this.isOnAir()) {
+      if (this.state === 'flying') {
+        if (this.upIsUp()) {
+          result.push('flying:stop')
+        }
+      }
+
+      if (this.state === 'jumping') {
+        if (this.upIsUp()) {
+          result.push('jumps:stop')
+        }
+      } else {
+        if (this.upIsDown()) {
+          result.push('flying')
+        }
+      }
+
+      if (this.state === 'walking') {
+        result.push('falls')
+      }
+    }
+
+    if (this.isOnFloor()) {
+      if (this.upIsDown()) {
+        result.push('jumps')
+      }
+
+      if (this.state !== 'walking') {
+        if (this.leftIsDown() && this.rightIsUp()) {
+          result.push('walk')
+        }
+        if (this.leftIsUp() && this.rightIsDown()) {
+          result.push('walk')
+        }
+      }
+
+      if (this.leftIsDown() && this.rightIsDown()) {
+        result.push('stand')
+      }
+      if (this.leftIsUp() && this.rightIsUp()) {
+        result.push('stand')
+      }
+    }
+
+    if (this.leftIsDown() && this.rightIsUp()) {
+      result.push('left')
+    }
+    if (this.leftIsUp() && this.rightIsDown()) {
+      result.push('right')
+    }
+    if (this.isHangingLeft() || this.isHangingRight()) {
+      result.push('hangs')
+    }
+
+    if (this.state === 'hanging') {
+      if (this.avatar.body.blocked.left && this.leftIsUp()) {
+        result.push('hangs:stop')
+        result.push('right')
+      }
+      if (this.avatar.body.blocked.right && this.rightIsUp()) {
+        result.push('hangs:stop')
+        result.push('left')
+      }
+    }
+
+    // if (this.avatar.body.blocked.right && this.rightIsDown()) {
+    //   this.hanging = true
+    //   this.avatar.setVelocityY(-5)
+    //   this.facingLeft()
+    // } else if (this.avatar.body.blocked.left && this.leftIsDown()) {
+    //   this.hanging = true
+    //   this.avatar.setVelocityY(-5)
+    //   this.facingRight()
+    // } else {
+    //   this.hanging = false
+    // }
+
+
+    return result
   }
 
-  private hanging () {
-    if (!this.isOnFloor() && this.isOnWall() && !this.isJumping() && !this.isFlying()) {
-
-    }
+  private isHangingRight() {
+    return this.avatar.body.blocked.right && this.rightIsDown();
   }
 
-  update () {
-    this.moveOnHorizontally()
-    // this.animateOrientation()
-    // this.animateWalking()
-
-    this.jumps()
-    // this.animateJumping()
-    this.flies()
+  private isHangingLeft() {
+    return this.avatar.body.blocked.left && this.leftIsDown();
   }
 }
