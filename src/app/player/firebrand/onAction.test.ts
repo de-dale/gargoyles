@@ -21,7 +21,6 @@ const speedToLeft = -speedToRight;
 const speedJump = -400;
 const speedFlying = -5;
 
-const fallingSpeed = 0;
 const speedOfRepulsion = 500;
 describe(`Firebrand in Action`, () => {
 
@@ -75,7 +74,7 @@ describe(`Firebrand in Action`, () => {
   beforeEach(() => {
     const scene = getScene()
     const avatar = scene.physics.add.sprite();
-    firebrand = new FirebrandOnAction(avatar, { up, down, left, right })
+    firebrand = new FirebrandOnAction(avatar, { up, down, left, right }, { speed: speedToRight, jumpSpeed: speedJump })
   })
 
   afterEach(() => {
@@ -161,7 +160,47 @@ describe(`Firebrand in Action`, () => {
       expect(setVelocityX).toHaveBeenCalledWith(0)
     });
 
-  })
+    it(`no longer when is starting to jump`, () => {
+      givenFirebrandStateIs('walking')
+      givenAvatarIsOnFloor()
+      givenKeyIsDown(left)
+      givenKeyIsDown(up)
+
+      firebrand.update()
+
+      expect(firebrand.state).not.toBe('walking')
+    });
+
+  });
+
+  describe(`stands`, () => {
+    it(`when is on floor and do nothing`, () => {
+      givenAvatarIsOnFloor()
+
+      firebrand.update()
+
+      expect(firebrand.state).toBe('standing')
+    });
+
+    it(`no longer when is starting to jump`, () => {
+      givenAvatarIsOnFloor()
+      givenKeyIsDown(up)
+
+      firebrand.update()
+
+      expect(firebrand.state).not.toBe('standing')
+    });
+
+    it(`when jumping but is reaching the groung`, () => {
+      givenAvatarIsOnFloor()
+      givenFirebrandStateIs('jumping')
+
+      firebrand.update()
+
+      expect(firebrand.state).toBe('standing')
+    });
+
+  });
 
   describe(`falls`, () => {
 
@@ -176,7 +215,7 @@ describe(`Firebrand in Action`, () => {
       firebrand.update()
 
       expect(setVelocityX).toHaveBeenCalledWith(speedToLeft)
-      expect(setVelocityY).toHaveBeenCalledWith(fallingSpeed)
+      expect(setVelocityY).not.toHaveBeenCalled()
     });
 
     it(`when flying and key 'up' is released`, () => {
@@ -188,7 +227,7 @@ describe(`Firebrand in Action`, () => {
 
       firebrand.update()
 
-      expect(setVelocityY).toHaveBeenCalledWith(fallingSpeed)
+      expect(setVelocityY).not.toHaveBeenCalled()
     });
 
   })
@@ -256,7 +295,7 @@ describe(`Firebrand in Action`, () => {
 
       firebrand.update()
 
-      expect(setVelocityY).toHaveBeenCalledWith(0)
+      expect(setVelocityY).not.toHaveBeenCalled()
     });
 
     it(`is not possible when is jumping`, () => {
@@ -269,6 +308,16 @@ describe(`Firebrand in Action`, () => {
       firebrand.update()
 
       expect(setVelocityY).not.toHaveBeenCalled()
+    });
+
+    it(`is not possible when is hanging`, () => {
+      givenFirebrandStateIs('hanging')
+      givenAvatarIsOnAir()
+      givenKeyIsDown(up)
+
+      firebrand.update()
+
+      expect(firebrand.state).not.toBe('flying')
     });
 
     it(`no longer when reaches the ground`, () => {
@@ -285,6 +334,7 @@ describe(`Firebrand in Action`, () => {
   })
 
   describe(`hangs`, () => {
+
     it(`left when is on air going left into a wall`, () => {
       givenAvatarIsOnAir()
       givenAvatarIsBlockedOnLeft()
@@ -297,6 +347,28 @@ describe(`Firebrand in Action`, () => {
       expect(setVelocityY).toHaveBeenCalledWith(-5)
     });
 
+    it(`does not trigger when is flying into a wall to left`, () => {
+      givenFirebrandStateIs('flying')
+      givenAvatarIsOnAir()
+      givenAvatarIsBlockedOnLeft()
+      givenKeyIsDown(up)
+      givenKeyIsDown(left)
+
+      firebrand.update()
+
+      expect(firebrand.state).not.toBe('hanging')
+    });
+
+    it(`when is hanging and 'up' key is down`, () => {
+      givenFirebrandStateIs('hanging')
+      givenAvatarIsOnAir()
+      givenKeyIsDown(up)
+
+      firebrand.update()
+
+      expect(firebrand.state).toBe('hanging')
+    });
+
     it(`right when is on air going right into a wall`, () => {
       givenAvatarIsOnAir()
       givenAvatarIsBlockedOnRight()
@@ -307,6 +379,19 @@ describe(`Firebrand in Action`, () => {
       firebrand.update()
 
       expect(setVelocityY).toHaveBeenCalledWith(-5)
+    });
+
+
+    it(`does not trigger when is flying into a wall to right`, () => {
+      givenFirebrandStateIs('flying')
+      givenAvatarIsOnAir()
+      givenAvatarIsBlockedOnRight()
+      givenKeyIsDown(up)
+      givenKeyIsDown(right)
+
+      firebrand.update()
+
+      expect(firebrand.state).not.toBe('hanging')
     });
 
     it(`no longer to left when key 'left' is released`, () => {
@@ -322,6 +407,21 @@ describe(`Firebrand in Action`, () => {
       expect(setVelocityY).not.toHaveBeenCalled()
     });
 
+    it(`no longer to left when key 'right' is down`, () => {
+      givenFirebrandStateIs('hanging')
+      givenAvatarIsOnAir()
+      givenAvatarIsBlockedOnLeft()
+      givenKeyIsDown(left)
+      givenKeyIsDown(right)
+
+      const setVelocityY = jest.spyOn(firebrand.avatar, "setVelocityY");
+
+      firebrand.update()
+
+      expect(setVelocityY).not.toHaveBeenCalled()
+      expect(firebrand.state).not.toBe("hanging")
+    });
+
     it(`no longer to right when key 'right' is released`, () => {
       givenFirebrandStateIs('hanging')
       givenAvatarIsOnAir()
@@ -333,6 +433,21 @@ describe(`Firebrand in Action`, () => {
       firebrand.update()
 
       expect(setVelocityY).not.toHaveBeenCalled()
+    });
+
+    it(`no longer to right when key 'left' is down`, () => {
+      givenFirebrandStateIs('hanging')
+      givenAvatarIsOnAir()
+      givenAvatarIsBlockedOnRight()
+      givenKeyIsDown(left)
+      givenKeyIsDown(right)
+
+      const setVelocityY = jest.spyOn(firebrand.avatar, "setVelocityY");
+
+      firebrand.update()
+
+      expect(setVelocityY).not.toHaveBeenCalled()
+      expect(firebrand.state).not.toBe("hanging")
     });
 
     it(`is repulsed form wall when hangs no longer`, () => {
