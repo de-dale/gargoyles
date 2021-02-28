@@ -3,7 +3,7 @@ import * as Phaser from 'phaser'
 import * as firebrand from '@assets/sprites/firebrand.png'
 import * as firebrandAtlas from '@assets/sprites/firebrand.atlas.json'
 
-type State = 'walking' | 'jumping' | 'flying' | 'falling' | 'hanging' | 'standing' | 'none'
+type State = 'walking' | 'jumping' | 'flying' | 'falling' | 'hanging:left' | 'hanging:right' | 'standing' | 'none'
 
 export class FirebrandOnAction {
   avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
@@ -13,8 +13,11 @@ export class FirebrandOnAction {
   right: Phaser.Input.Keyboard.Key
 
   state: State;
-  private speed: number;
-  private jumpSpeed: number;
+
+  private readonly speed: number;
+  private readonly jumpSpeed: number;
+
+  private readonly wallHangingRepulsion = 500;
 
   private readonly Animations = {
     JUMP: 'jump'
@@ -31,7 +34,7 @@ export class FirebrandOnAction {
     this.down = down
     this.left = left
     this.right = right
-    this.speed = speed;
+    this.speed = Math.abs(speed);
     this.jumpSpeed = -Math.abs(jumpSpeed);
   }
 
@@ -75,6 +78,7 @@ export class FirebrandOnAction {
 
   private static onlyOneIsDown = (keys: Phaser.Input.Keyboard.Key[]) => keys.filter(key => key.isDown).length === 1;
   private static allAreDown = (keys: Phaser.Input.Keyboard.Key[]) => keys.every(key => key.isDown);
+
   private static allAreUp = (keys: Phaser.Input.Keyboard.Key[]) => keys.every(key => key.isUp);
 
   private isOnFloor(): boolean {
@@ -113,31 +117,21 @@ export class FirebrandOnAction {
     this.avatar.setFlip(false, false)
   }
 
+
   private animateFacingLeft() {
     this.avatar.setFlip(true, false)
   }
 
-
   update() {
-    console.log(this.state)
-
-    if (this.leftIsDown() && this.rightIsUp()) {
-      this.setSpeedToLeft(160);
-      this.animateFacingLeft()
-    }
-    if (this.leftIsUp() && this.rightIsDown()) {
-      this.setSpeedToRight(160)
-      this.animateFacingRight()
-    }
-    if (this.isStopping()) {
-      this.stops();
-    }
+    this.movingHorizontally();
 
     this.standing();
     this.walking();
     this.jumping();
     this.flying();
     this.hanging();
+
+    this.movingVertically();
 
     // ANIMATE
 
@@ -150,13 +144,37 @@ export class FirebrandOnAction {
       case 'walking':
         this.avatar.anims.play('walk', true)
         break
-      case 'hanging':
+      case 'hanging:left':
+      case 'hanging:right':
         this.avatar.anims.play('hanged', true)
         break
       case 'standing':
       case 'none':
       default:
         this.avatar.setTexture('firebrand', 'firebrand.stand')
+    }
+  }
+
+  private movingHorizontally() {
+    if (this.isHanging()) {
+      return;
+    }
+    if (this.leftIsDown() && this.rightIsUp()) {
+      this.setSpeedToLeft(this.speed);
+      this.animateFacingLeft()
+    }
+    if (this.leftIsUp() && this.rightIsDown()) {
+      this.setSpeedToRight(this.speed)
+      this.animateFacingRight()
+    }
+    if (this.isStopping()) {
+      this.stops();
+    }
+  }
+
+  private movingVertically() {
+    if (this.isFlying() || this.isHanging()) {
+      this.setVerticalImmobility();
     }
   }
 
@@ -175,10 +193,23 @@ export class FirebrandOnAction {
     }
   }
 
+  private isWalkingOnAir() {
+    return this.isOnAir() && this.isWalking();
+  }
+
+  private startsWalking() {
+    return this.isOnFloor() && FirebrandOnAction.onlyOneIsDown([this.left, this.right]);
+  }
+
   private jumping() {
-    if (this.startsJumping()) {
+    if (this.startsJumpingFromFloor()) {
       this.state = 'jumping'
-      this.avatar.setVelocityY(this.jumpSpeed)
+      this.setJumpVelocity();
+    }
+    if (this.startsJumpingFromWall()) {
+      this.stopsHanging();
+      this.state = 'jumping'
+      this.setJumpVelocity();
     }
     if (this.stopsJumping()) {
       this.state = 'falling'
@@ -188,43 +219,38 @@ export class FirebrandOnAction {
   private flying() {
     if (this.startsFlying()) {
       this.state = 'flying'
-      this.setVerticalImmobility();
     }
     if (this.stopsFlying()) {
       this.state = 'falling'
     }
   }
 
-  private isWalkingOnAir() {
-    return this.isOnAir() && this.isWalking();
-  }
-
-  private startsWalking() {
-    return this.isOnFloor() && FirebrandOnAction.onlyOneIsDown([this.left, this.right]);
-  }
-
   private hanging() {
     if (this.isFlying()) {
       return;
     }
-    if (this.isHangingOnLeft()) {
-      this.state = 'hanging'
-      this.setVerticalImmobility();
+    if (this.isJumping()) {
+      return;
+    }
+    if (this.startsHangingOnLeft()) {
+      this.state = 'hanging:left'
       this.animateFacingRight()
     }
-    if (this.isHangingOnRight()) {
-      this.state = 'hanging'
-      this.setVerticalImmobility();
+    if (this.startsHangingOnRight()) {
+      this.state = 'hanging:right'
       this.animateFacingLeft()
     }
+    this.stopsHanging();
+  }
 
+  private stopsHanging() {
     if (this.stopsHangingLeft()) {
       this.state = 'falling'
-      this.setSpeedToRight(500);
+      this.setSpeedToRight(this.wallHangingRepulsion);
     }
     if (this.stopsHangingRight()) {
       this.state = 'falling'
-      this.setSpeedToLeft(500)
+      this.setSpeedToLeft(this.wallHangingRepulsion)
     }
   }
 
@@ -232,28 +258,8 @@ export class FirebrandOnAction {
     this.avatar.setVelocityY(-5)
   }
 
-  private isStopping() {
-    return FirebrandOnAction.allAreDown([this.left, this.right])
-      || FirebrandOnAction.allAreUp([this.left, this.right]);
-  }
-
-  private stopsJumping() {
-    return this.isOnAir() && this.isJumping() && this.upIsUp();
-  }
-
-  private startsJumping() {
-    return this.isOnFloor() && this.upIsDown();
-  }
-
-  private stopsFlying() {
-    return this.isOnAir() && this.isFlying() && this.upIsUp();
-  }
-
-  private startsFlying() {
-    return this.isOnAir()
-      && !this.isJumping()
-      && !this.isHanging()
-      && this.upIsDown();
+  private setJumpVelocity() {
+    this.avatar.setVelocityY(this.jumpSpeed)
   }
 
   private stops() {
@@ -266,6 +272,34 @@ export class FirebrandOnAction {
 
   private setSpeedToRight(speed: number) {
     this.avatar.setVelocityX(Math.abs(speed))
+  }
+
+  private isStopping() {
+    return FirebrandOnAction.allAreDown([this.left, this.right])
+      || FirebrandOnAction.allAreUp([this.left, this.right]);
+  }
+
+  private stopsJumping() {
+    return this.isOnAir() && this.isJumping() && this.upIsUp();
+  }
+
+  private startsJumpingFromFloor() {
+    return this.isOnFloor() && this.upIsDown();
+  }
+
+  private startsJumpingFromWall() {
+    return this.isHanging() && this.upIsDown();
+  }
+
+  private stopsFlying() {
+    return this.isOnAir() && this.isFlying() && this.upIsUp();
+  }
+
+  private startsFlying() {
+    return this.isOnAir()
+      && !this.isJumping()
+      && !this.isHanging()
+      && this.upIsDown();
   }
 
   private isWalking() {
@@ -281,27 +315,35 @@ export class FirebrandOnAction {
   }
 
   private isHanging() {
-    return this.state === 'hanging';
+    return this.isHangingOnLeft() || this.isHangingOnRight()
   }
 
   private isHangingOnLeft() {
-    return this.avatar.body.blocked.left && this.leftIsDown() && !this.rightIsDown()
-  }
-
-  private stopsHangingLeft() {
-    return this.isHanging()
-      && this.avatar.body.blocked.left
-      && (this.leftIsUp() || FirebrandOnAction.allAreDown([this.left, this.right]));
+    return this.state === 'hanging:left';
   }
 
   private isHangingOnRight() {
-    return this.avatar.body.blocked.right && this.rightIsDown() && !this.leftIsDown()
+    return this.state === 'hanging:right';
+  }
+
+  private startsHangingOnLeft() {
+    return this.isOnAir()
+      && this.avatar.body.blocked.left
+      && this.leftIsDown()
+  }
+
+  private stopsHangingLeft() {
+    return this.isHangingOnLeft() && this.upIsDown();
+  }
+
+  private startsHangingOnRight() {
+    return this.isOnAir()
+      && this.avatar.body.blocked.right
+      && this.rightIsDown()
   }
 
   private stopsHangingRight() {
-    return this.isHanging()
-      && this.avatar.body.blocked.right
-      && (this.rightIsUp() || FirebrandOnAction.allAreDown([this.left, this.right]));
+    return this.isHangingOnRight() && this.upIsDown();
   }
 
 }
