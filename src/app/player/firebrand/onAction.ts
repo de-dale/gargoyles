@@ -23,7 +23,7 @@ export class FirebrandOnAction {
     JUMP: 'jump'
   }
 
-  constructor(avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
+  constructor (avatar: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, {
     up,
     down,
     left,
@@ -34,26 +34,26 @@ export class FirebrandOnAction {
     this.down = down
     this.left = left
     this.right = right
-    this.speed = Math.abs(speed);
-    this.jumpSpeed = -Math.abs(jumpSpeed);
+    this.speed = Math.abs(speed)
+    this.jumpSpeed = -Math.abs(jumpSpeed)
   }
 
-  static preloadSprites(scene: Phaser.Scene) {
+  static preloadSprites (scene: Phaser.Scene) {
     scene.load.atlas('firebrand', firebrand, firebrandAtlas)
   }
 
-  static create(scene: Phaser.Scene, x, y) {
+  static create (scene: Phaser.Scene, x, y, firebrandSettings = {}) {
     const cursors = scene.input.keyboard.createCursorKeys()
     const player = scene.physics.add.sprite(x, y, 'firebrand', 'firebrand.stand')
     player.setCollideWorldBounds(true)
     scene.cameras.main.startFollow(player)
 
-    const result = new FirebrandOnAction(player, cursors, {})
+    const result = new FirebrandOnAction(player, cursors, firebrandSettings)
     result.createAnimations(scene)
     return result
   }
 
-  private createAnimations(scene: Phaser.Scene) {
+  private createAnimations (scene: Phaser.Scene) {
     this.avatar.anims.create({
       key: 'walk',
       frames: scene.anims.generateFrameNames('firebrand', { prefix: 'firebrand.walk', start: 1, end: 3 }),
@@ -81,57 +81,56 @@ export class FirebrandOnAction {
 
   private static allAreUp = (keys: Phaser.Input.Keyboard.Key[]) => keys.every(key => key.isUp);
 
-  private isOnFloor(): boolean {
+  private isOnFloor (): boolean {
     return this.avatar.body.onFloor()
   }
 
-  private isOnAir(): boolean {
+  private isOnAir (): boolean {
     return !this.isOnFloor()
   }
 
-  private leftIsDown(): boolean {
+  private leftIsDown (): boolean {
     return this.left.isDown
   }
 
-  private leftIsUp(): boolean {
+  private leftIsUp (): boolean {
     return this.left.isUp
   }
 
-  private rightIsDown(): boolean {
+  private rightIsDown (): boolean {
     return this.right.isDown
   }
 
-  private rightIsUp(): boolean {
+  private rightIsUp (): boolean {
     return this.right.isUp
   }
 
-  private upIsDown(): boolean {
+  private upIsDown (): boolean {
     return this.up.isDown
   }
 
-  private upIsUp(): boolean {
+  private upIsUp (): boolean {
     return this.up.isUp
   }
 
-  private animateFacingRight() {
+  private animateFacingRight () {
     this.avatar.setFlip(false, false)
   }
 
-
-  private animateFacingLeft() {
+  private animateFacingLeft () {
     this.avatar.setFlip(true, false)
   }
 
-  update() {
-    this.movingHorizontally();
+  update () {
+    this.movingHorizontally()
 
-    this.standing();
-    this.walking();
-    this.jumping();
-    this.flying();
-    this.hanging();
+    this.standing()
+    this.walking()
+    this.jumping()
+    this.flying()
+    this.hanging()
 
-    this.movingVertically();
+    this.movingVertically()
 
     // ANIMATE
 
@@ -155,12 +154,12 @@ export class FirebrandOnAction {
     }
   }
 
-  private movingHorizontally() {
+  private movingHorizontally () {
     if (this.isHanging()) {
-      return;
+      return
     }
     if (this.leftIsDown() && this.rightIsUp()) {
-      this.setSpeedToLeft(this.speed);
+      this.setSpeedToLeft(this.speed)
       this.animateFacingLeft()
     }
     if (this.leftIsUp() && this.rightIsDown()) {
@@ -168,23 +167,23 @@ export class FirebrandOnAction {
       this.animateFacingRight()
     }
     if (this.isStopping()) {
-      this.stops();
+      this.stops()
     }
   }
 
-  private movingVertically() {
+  private movingVertically () {
     if (this.isFlying() || this.isHanging()) {
-      this.setVerticalImmobility();
+      this.setVerticalImmobility()
     }
   }
 
-  private standing() {
+  private standing () {
     if (this.isOnFloor() && this.isStopping()) {
       this.state = 'standing'
     }
   }
 
-  private walking() {
+  private walking () {
     if (!this.isWalking() && this.startsWalking()) {
       this.state = 'walking'
     }
@@ -193,30 +192,30 @@ export class FirebrandOnAction {
     }
   }
 
-  private isWalkingOnAir() {
-    return this.isOnAir() && this.isWalking();
+  private isWalkingOnAir () {
+    return this.isOnAir() && this.isWalking()
   }
 
-  private startsWalking() {
-    return this.isOnFloor() && FirebrandOnAction.onlyOneIsDown([this.left, this.right]);
+  private startsWalking () {
+    return this.isOnFloor() && FirebrandOnAction.onlyOneIsDown([this.left, this.right])
   }
 
-  private jumping() {
+  private jumping () {
     if (this.startsJumpingFromFloor()) {
       this.state = 'jumping'
-      this.setJumpVelocity();
+      this.setJumpVelocity()
     }
     if (this.startsJumpingFromWall()) {
-      this.stopsHanging();
+      this.stopsHanging()
       this.state = 'jumping'
-      this.setJumpVelocity();
+      this.setJumpVelocity()
     }
     if (this.stopsJumping()) {
       this.state = 'falling'
     }
   }
 
-  private flying() {
+  private flying () {
     if (this.startsFlying()) {
       this.state = 'flying'
     }
@@ -225,12 +224,12 @@ export class FirebrandOnAction {
     }
   }
 
-  private hanging() {
+  private hanging () {
     if (this.isFlying()) {
-      return;
+      return
     }
     if (this.isJumping()) {
-      return;
+      return
     }
     if (this.startsHangingOnLeft()) {
       this.state = 'hanging:left'
@@ -240,13 +239,13 @@ export class FirebrandOnAction {
       this.state = 'hanging:right'
       this.animateFacingLeft()
     }
-    this.stopsHanging();
+    this.stopsHanging()
   }
 
-  private stopsHanging() {
+  private stopsHanging () {
     if (this.stopsHangingLeft()) {
       this.state = 'falling'
-      this.setSpeedToRight(this.wallHangingRepulsion);
+      this.setSpeedToRight(this.wallHangingRepulsion)
     }
     if (this.stopsHangingRight()) {
       this.state = 'falling'
@@ -254,96 +253,95 @@ export class FirebrandOnAction {
     }
   }
 
-  private setVerticalImmobility() {
+  private setVerticalImmobility () {
     this.avatar.setVelocityY(-5)
   }
 
-  private setJumpVelocity() {
+  private setJumpVelocity () {
     this.avatar.setVelocityY(this.jumpSpeed)
   }
 
-  private stops() {
+  private stops () {
     this.avatar.setVelocityX(0)
   }
 
-  private setSpeedToLeft(speed: number) {
+  private setSpeedToLeft (speed: number) {
     this.avatar.setVelocityX(-Math.abs(speed))
   }
 
-  private setSpeedToRight(speed: number) {
+  private setSpeedToRight (speed: number) {
     this.avatar.setVelocityX(Math.abs(speed))
   }
 
-  private isStopping() {
-    return FirebrandOnAction.allAreDown([this.left, this.right])
-      || FirebrandOnAction.allAreUp([this.left, this.right]);
+  private isStopping () {
+    return FirebrandOnAction.allAreDown([this.left, this.right]) ||
+      FirebrandOnAction.allAreUp([this.left, this.right])
   }
 
-  private stopsJumping() {
-    return this.isOnAir() && this.isJumping() && this.upIsUp();
+  private stopsJumping () {
+    return this.isOnAir() && this.isJumping() && this.upIsUp()
   }
 
-  private startsJumpingFromFloor() {
-    return this.isOnFloor() && this.upIsDown();
+  private startsJumpingFromFloor () {
+    return this.isOnFloor() && this.upIsDown()
   }
 
-  private startsJumpingFromWall() {
-    return this.isHanging() && this.upIsDown();
+  private startsJumpingFromWall () {
+    return this.isHanging() && this.upIsDown()
   }
 
-  private stopsFlying() {
-    return this.isOnAir() && this.isFlying() && this.upIsUp();
+  private stopsFlying () {
+    return this.isOnAir() && this.isFlying() && this.upIsUp()
   }
 
-  private startsFlying() {
-    return this.isOnAir()
-      && !this.isJumping()
-      && !this.isHanging()
-      && this.upIsDown();
+  private startsFlying () {
+    return this.isOnAir() &&
+      !this.isJumping() &&
+      !this.isHanging() &&
+      this.upIsDown()
   }
 
-  private isWalking() {
-    return this.state === 'walking';
+  private isWalking () {
+    return this.state === 'walking'
   }
 
-  private isJumping() {
-    return this.state === 'jumping';
+  private isJumping () {
+    return this.state === 'jumping'
   }
 
-  private isFlying() {
-    return this.state === 'flying';
+  private isFlying () {
+    return this.state === 'flying'
   }
 
-  private isHanging() {
+  private isHanging () {
     return this.isHangingOnLeft() || this.isHangingOnRight()
   }
 
-  private isHangingOnLeft() {
-    return this.state === 'hanging:left';
+  private isHangingOnLeft () {
+    return this.state === 'hanging:left'
   }
 
-  private isHangingOnRight() {
-    return this.state === 'hanging:right';
+  private isHangingOnRight () {
+    return this.state === 'hanging:right'
   }
 
-  private startsHangingOnLeft() {
-    return this.isOnAir()
-      && this.avatar.body.blocked.left
-      && this.leftIsDown()
+  private startsHangingOnLeft () {
+    return this.isOnAir() &&
+      this.avatar.body.blocked.left &&
+      this.leftIsDown()
   }
 
-  private stopsHangingLeft() {
-    return this.isHangingOnLeft() && this.upIsDown();
+  private stopsHangingLeft () {
+    return this.isHangingOnLeft() && this.upIsDown()
   }
 
-  private startsHangingOnRight() {
-    return this.isOnAir()
-      && this.avatar.body.blocked.right
-      && this.rightIsDown()
+  private startsHangingOnRight () {
+    return this.isOnAir() &&
+      this.avatar.body.blocked.right &&
+      this.rightIsDown()
   }
 
-  private stopsHangingRight() {
-    return this.isHangingOnRight() && this.upIsDown();
+  private stopsHangingRight () {
+    return this.isHangingOnRight() && this.upIsDown()
   }
-
 }

@@ -22,6 +22,20 @@ module.exports = {
         generator: {
           filename: 'assets/[hash][ext][query]'
         }
+      },
+      {
+        test: /\.(ttf)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext][query]'
+        }
+      },
+      {
+        test: /\.(ogg)$/i,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext][query]'
+        }
       }
     ]
   },
